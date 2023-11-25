@@ -1,51 +1,74 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
+library(ggplot2)
+library(shinythemes)
+library(dplyr)
+library(ggwordcloud)
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
+CD <- read.csv("Cleaned_Combined_Dataset.csv")
 
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
-    )
+ui <- fluidPage(theme = shinytheme("superhero"),
+                navbarPage("FINAL PROJECT NAME HERE ",
+                           tabPanel("FIRST TAB HERE ",
+                                    sidebarPanel(
+                                      selectInput("num", "Select Numerical Variable:",
+                                                  choices = c("Age", "Courses", "States"),
+                                                  selected = "Age")
+                                    ),
+                                    mainPanel(plotOutput("numgraph"))
+                           ),
+                           tabPanel("SECOND TAB HERE ",
+                                    sidebarPanel(
+                                      selectInput("cat1", "Select Cat Var:",
+                                                  choices = c("Year", "Summer", "Major", "Sport"),
+                                                  selected = "Sport"),
+                                      numericInput("size1", "Max Size:", min = 20, max = 100,
+                                                   value = 25, step = 2)
+                                    ),
+                                    mainPanel(plotOutput("catgraph1"))
+                           ),
+                           tabPanel("THIRD TAB HERE ",
+                                    sidebarPanel(
+                                      selectInput("cat2", "Select Cat Var:",
+                                                  choices = c("Year", "Summer", "Major", "Sport"),
+                                                  selected = "Sport"),
+                                      numericInput("size2", "Max Size:", min = 20, max = 100,
+                                                   value = 25, step = 2)
+                                    ),
+                                    mainPanel(plotOutput("catgraph2"))
+                           )
+                )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
+  output$numgraph <- renderPlot({
+    ggplot(CD, aes_string(input$num)) + geom_boxplot(fill = "tomato", outlier.colour = "black")
+  })
+  
+  dat1 <- reactive({
+    CD %>%
+      group_by(var = get(input$cat1)) %>%
+      summarise(Students = n())
+  })
+  
+  output$catgraph1 <- renderPlot({
+    ggplot(dat1(), aes(label = dat1()$var, size = dat1()$Students, color = dat1()$var)) +
+      geom_text_wordcloud_area() +
+      scale_size_area(max_size = input$size1) +
+      scale_color_viridis_d(option = "turbo")
+  })
+  
+  dat2 <- reactive({
+    CD %>%
+      group_by(var = get(input$cat2)) %>%
+      summarise(Students = n())
+  })
+  
+  output$catgraph2 <- renderPlot({
+    ggplot(dat2(), aes(label = dat2()$var, size = dat2()$Students, color = dat2()$var)) +
+      geom_text_wordcloud_area() +
+      scale_size_area(max_size = input$size2) +
+      scale_color_viridis_d(option = "turbo")
+  })
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
