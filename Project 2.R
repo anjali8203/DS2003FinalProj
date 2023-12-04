@@ -15,7 +15,7 @@ continent_combined <- merge(happiness, continent)
 
 # UI
 ui <- fluidPage(
-  titlePanel("Which of these Factors is most strongly associated with World Happiness? "),
+  titlePanel("Which of These Factors is Most Strongly Associated with World Happiness? "),
   sidebarLayout(
     sidebarPanel(
       sliderInput("year", "Select the Year:", 
