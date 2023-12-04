@@ -20,9 +20,8 @@ ui = fluidPage(
       ),
       
      sliderInput("range", "Year Range:", min = 2015, max = 2019, value = c(2015,2019)),
-      
-      
-  
+     selectInput(inputId = "color", label = "Color Palette:",
+                 choices = c("viridis", "magma", "inferno", "plasma","turbo"), selected = "plasma"),
       
     ), #sidebar panel
     mainPanel(plotOutput("dynamicHeatmap")
@@ -34,7 +33,7 @@ server = function(input,output){
   
   overall_dataset <- reactive({
     version3 %>%
-      filter(Year >= input$range[1] & Year <= input$range[2]) %>% 
+      filter(Year >= input$range[1] & Year <= input$range[2] & !is.na(Continent)) %>% 
       group_by(Continent, Year) %>%
       summarize(avgHappiness = mean(Happiness.Score, na.rm = TRUE)) %>%
       ungroup()
@@ -55,14 +54,13 @@ server = function(input,output){
   #render heat map 
   output$dynamicHeatmap <- renderPlot({
     if(input$select == "Continent") {
-    ggplot(selected_continent_dataset(), aes(x=Year, y=Continent, fill=avgHappiness))+geom_raster()+scale_fill_viridis_c(option="magma")
+    ggplot(selected_continent_dataset(), aes(x=Year, y=Continent, fill=avgHappiness))+geom_raster()+scale_fill_viridis_c(option=input$color)
     }
     else if (input$select == "Country"){
-      ggplot(selected_continent_dataset(), aes(x=Year, y=Country, fill=avgHappiness))+geom_raster()+scale_fill_viridis_c(option="magma")
+      ggplot(selected_continent_dataset(), aes(x=Year, y=Country, fill=avgHappiness))+geom_raster()+scale_fill_viridis_c(option=input$color)
     }
     
   })
-  
   
 } #function
 
