@@ -1,5 +1,4 @@
 # Project # 2: World Happiness Report 
-
 #loading the libraries 
 library(shiny)
 library(ggplot2)
@@ -8,9 +7,11 @@ library(RColorBrewer)
 library(dplyr)
 
 #load the happiness data: 
-happiness<-read.csv("/Users/daphnepfoser/Documents/DS 2003( communicating with data)/Cleaned_Combined_Dataset_v2.csv")
-
-continent_combined <- happiness 
+happiness <- read.csv("/Users/daphnepfoser/Documents/DS 2003( communicating with data)/Cleaned_Combined_Dataset_v2.csv")
+# 1. making the continent csv a dataset:
+continent <- read.csv("/Users/daphnepfoser/Documents/DS 2003( communicating with data)/version3.csv")
+# 2 combining continent and happiness:
+continent_combined <- merge(happiness, continent)
 
 # UI
 ui <- fluidPage(
@@ -18,9 +19,9 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       sliderInput("year", "Select the Year:", 
-                  min = min(continent_combined$Year), 
-                  max = max(continent_combined$Year), 
-                  value = 2019, 
+                  min = ifelse(is.null(continent_combined$Year) || any(is.na(continent_combined$Year)), 0, min(continent_combined$Year)), 
+                  max = ifelse(is.null(continent_combined$Year) || any(is.na(continent_combined$Year)), 0, max(continent_combined$Year)), 
+                  value = ifelse(is.null(continent_combined$Year) || any(is.na(continent_combined$Year)), 0, 2019), 
                   step = 1,
                   sep = ""),
       selectInput("xcol", "Happiness", c("Happiness.Rank", "Happiness.Score"), selected = "Happiness.Score"),
@@ -75,4 +76,3 @@ server <- function(input, output) {
 }
 
 shinyApp(ui, server)
-
