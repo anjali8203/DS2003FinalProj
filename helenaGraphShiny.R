@@ -1,6 +1,7 @@
 library(shiny)
 library(ggplot2)
 library(RColorBrewer)
+library(dplyr)
 library(plotly)
 
 ui = fluidPage(
@@ -8,19 +9,19 @@ ui = fluidPage(
   sidebarLayout(
     sidebarPanel(
       
-      selectInput("select", "Select:", c("Overall", "Continent"), selected = "Overall"), 
+      selectInput("select", "Select:", c("Continent", "Country"), selected = "Continent"), 
       
       conditionalPanel(
-        condition = "input.select == 'Continent'",
+        condition = "input.select == 'Country'",
         selectInput(inputId = "y",
                     label = "Y-Axis:",
-                    choices = c("South America", "Oceania", "North America", "Europe","Asia","Africa"),
-                    selected = "North America")
+                    choices = c("South America", "Oceania", "North America", "Europe","Asia","Africa"),selected = "North America"
+                    )
       ),
-      
+  
       
     ), #sidebar panel
-    mainPanel(plotOutput("heatmap")
+    mainPanel(plotOutput("dynamicHeatmap")
     )
   )
 )
@@ -35,9 +36,9 @@ server = function(input,output){
   })
   
   selected_continent_dataset <- reactive({
-    if (input$select == "Continent") {
+    if (input$select == "Country") {
       Cleaned_Combined_Dataset_v2 %>%
-        filter(Continent == input$select) %>%
+        filter(Continent == input$y) %>%
         group_by(Country, Year) %>%
         summarize(avgHappiness = mean(Happiness.Score, na.rm = TRUE)) %>%
         ungroup()
@@ -47,22 +48,14 @@ server = function(input,output){
   })
   
   #render heat map 
-  output$heatmap <- renderPlotly({
-    plot_ly(
-      selected_continent_dataset(),
-      x = ~Year,
-      y = ~get(input$y),
-      z = ~avgHappiness,
-      type = "heatmap",
-      colorscale = "Viridis",
-      colorbar = list(title = "Average Happiness Score"),
-    ) %>%
-      layout(
-        xaxis = list(title = "Year"),
-        yaxis = list(title = input$y),
-        title = "Average Happiness Scores Over Time",
-        showlegend = TRUE
-      )
+  output$dynamicHeatmap <- renderPlot({
+    if(input$select == "Continent") {
+    ggplot(selected_continent_dataset(), aes(x=Year, y=Continent, fill=avgHappiness))+geom_raster()+scale_fill_viridis_c(option="viridis")
+    }
+    else if (input$select == "Country"){
+      ggplot(selected_continent_dataset(), aes(x=Year, y=Country, fill=avgHappiness))+geom_raster()+scale_fill_viridis_c(option="viridis")
+    }
+    
   })
   
   
